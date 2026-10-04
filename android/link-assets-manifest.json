@@ -1,0 +1,57 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Manrope-ExtraBold.ttf",
+      "sha1": "37fb164d11e818c03f004b3f5be89933cc3544dc"
+    },
+    {
+      "path": "src/assets/fonts/NunitoSans-Bold.ttf",
+      "sha1": "2763c3e7496f5af5f3937b38caa55655d7a01e8d"
+    },
+    {
+      "path": "src/assets/fonts/NunitoSans-Light.ttf",
+      "sha1": "032199cbb199ec24ded2f11fb9ce1be94797d51b"
+    },
+    {
+      "path": "src/assets/fonts/NunitoSans-Regular.ttf",
+      "sha1": "1f18b202a62384ec79efbc436aad1f6d54d83d97"
+    },
+    {
+      "path": "src/assets/fonts/NunitoSans-SemiBold.ttf",
+      "sha1": "f27b76f80b8f8f418604d1198011e996e0bdbaab"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Medium.ttf",
+      "sha1": "e837165aedb031ea74872c5983a3217d1c190a1a"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Regular.ttf",
+      "sha1": "86a425be5a919d86729b85b2bc1d07da5ce413d4"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-SemiBold.ttf",
+      "sha1": "622ca6ccbe2f22c5611dffa016b745bd26be154c"
+    },
+    {
+      "path": "src/assets/fonts/Raleway-Bold.ttf",
+      "sha1": "f10396ca78ecfbb2ffcd3d5365de590d324d157f"
+    },
+    {
+      "path": "src/assets/fonts/Raleway-ExtraBold.ttf",
+      "sha1": "809e55a31d4e820baf9d930b0a8860ef1d8b3b3c"
+    },
+    {
+      "path": "src/assets/fonts/Raleway-Medium.ttf",
+      "sha1": "2a6303009a3fcead9b3be281c438ea3397926d58"
+    },
+    {
+      "path": "src/assets/fonts/Raleway-Regular.ttf",
+      "sha1": "13184a1a67f8521ca043d8db0de25459bc83c60b"
+    },
+    {
+      "path": "src/assets/fonts/Raleway-SemiBold.ttf",
+      "sha1": "d1bd39e5183c71efda03dc01c02dfb2c2fe82efd"
+    }
+  ]
+}
