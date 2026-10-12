@@ -26,6 +26,13 @@ export const lightColors = {
   success: palette.green_17BE5A,
   warning: palette.yellow_F1B11C,
   rating: palette.yellow_F3BC15,
+  notification: palette.green_08C514,
+
+  // Vendor Role Palette
+  vendor: palette.pink_FF5790,
+  vendorDark: palette.pink_F34D75,
+  vendorLight: '#FFD6E5',
+  vendorSoft: '#FFF0F5',
 };
 
 // Same keys hone zaroori hain, warna TypeScript error dega
@@ -55,4 +62,11 @@ export const darkColors: typeof lightColors = {
   success: palette.green_17BE5A,
   warning: palette.yellow_F1B11C,
   rating: palette.yellow_F3BC15,
+  notification: palette.green_08C514,
+
+  // Vendor Role Palette
+  vendor: palette.pink_FF5790,
+  vendorDark: palette.pink_F34D75,
+  vendorLight: '#592036',
+  vendorSoft: '#3A1422',
 };

@@ -1,2 +1,2 @@
-export * from './authApi';
-export { default } from './authApi';
+export * from '@/features/auth/api/authApi';
+export { default } from '@/features/auth/api/authApi';

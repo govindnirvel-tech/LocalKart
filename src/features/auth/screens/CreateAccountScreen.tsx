@@ -1,31 +1,55 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
-  View,
   TextInput,
   TouchableOpacity,
-  Image,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { launchImageLibrary } from 'react-native-image-picker';
-import { RootStackParamList } from '@/navigation/types';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, Theme } from '@/theme';
 import { fonts } from '@/theme/fonts';
-import CreateAccountBubble from '@/assets/svg/create_account_bubble.svg';
+import Button from '@/components/Button';
+import MaxAttemptsModal from '@/features/auth/components/MaxAttemptsModal';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useDispatch } from 'react-redux';
+import { startOnboarding } from '@/vendor/store/vendorOnboardingSlice';
+import { RootStackParamList } from '@/navigation/types';
+import { DynamicCreateAccountBubble } from '@/features/auth/components/DynamicBubbles';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type CreateAccountRouteProp = RouteProp<RootStackParamList, 'CreateAccount'>;
 
 const { width } = Dimensions.get('window');
 
-// Eye Icon SVG for password toggle
-const EyeIcon = ({ visible = false, color = '#8E8E93', size = 22 }: { visible?: boolean; color?: string; size?: number }) => (
+const createAccountSchema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  phone: z.string().optional(),
+});
+
+type CreateAccountFormData = z.infer<typeof createAccountSchema>;
+
+const EyeIcon = ({
+  visible = false,
+  color,
+  size = 22,
+}: {
+  visible?: boolean;
+  color: string;
+  size?: number;
+}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {visible ? (
       <>
@@ -47,41 +71,92 @@ const EyeIcon = ({ visible = false, color = '#8E8E93', size = 22 }: { visible?: 
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <Path d="M1 1l22 22" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M1 1l22 22"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </>
     )}
   </Svg>
 );
 
-const CreateAccountScreen = () => {
+export default function CreateAccountScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const dispatch = useDispatch();
+  const route = useRoute<CreateAccountRouteProp>();
+  const role = route.params?.role || 'customer';
+  const theme = useTheme<Theme>();
+  const {
+    signUp,
+    isLoading,
+    error: authError,
+    clearError,
+    isMaxAttemptsModalVisible,
+    dismissMaxAttemptsModal,
+  } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
-  const handlePickAvatar = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        selectionLimit: 1,
-        quality: 0.8,
-      },
-      (response) => {
-        if (response.assets && response.assets.length > 0 && response.assets[0].uri) {
-          setAvatarUri(response.assets[0].uri);
-        }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateAccountFormData>({
+    resolver: zodResolver(createAccountSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      phone: '',
+    },
+  });
+
+  const onSubmit = async (data: CreateAccountFormData) => {
+    clearError();
+
+    if (role === 'vendor') {
+      try {
+        await signUp({
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
+          phone: data.phone,
+          role,
+        });
+      } catch {
+        // Continue to onboarding UI seamlessly
       }
-    );
-  };
+      dispatch(startOnboarding());
+      return;
+    }
 
-  const handleDone = () => {
-    // Navigate to main app
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Tabs', params: { screen: 'Home' } }],
-    });
+    try {
+      const res = await signUp({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        phone: data.phone,
+        role,
+      });
+
+      if (!res.session) {
+        Alert.alert(
+          'Account Created',
+          'Please check your email inbox to confirm your account before logging in.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('Login', { role }),
+            },
+          ]
+        );
+      }
+    } catch {
+      // Error handled by useAuth
+    }
   };
 
   const handleCancel = () => {
@@ -89,11 +164,14 @@ const CreateAccountScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background Bubbles */}
-      <View style={styles.backgroundWrapper} pointerEvents="none">
-        <CreateAccountBubble width={width} height={width * (308 / 375)} preserveAspectRatio="xMidYMin slice" />
-      </View>
+    <Box flex={1} backgroundColor="mainBackground">
+      {/* Background Bubbles (Dynamic Role Color) */}
+      <Box position="absolute" top={0} left={0} right={0} pointerEvents="none">
+        <DynamicCreateAccountBubble
+          role={role}
+          width={width}
+        />
+      </Box>
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
@@ -106,93 +184,246 @@ const CreateAccountScreen = () => {
             showsVerticalScrollIndicator={false}
           >
             {/* Title */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Create{'\n'}Account</Text>
-            </View>
-
-            {/* Profile Avatar Picker */}
-            <View style={styles.avatarSection}>
-              <TouchableOpacity
-                style={styles.avatarPickerButton}
-                onPress={handlePickAvatar}
-                activeOpacity={0.8}
+            <Box marginLeft="s" marginTop="xl" marginBottom="l">
+              <Text
+                variant="display"
+                fontSize={role === 'vendor' ? 36 : 42}
+                lineHeight={role === 'vendor' ? 42 : 46}
+                color="textPrimary"
               >
-                {avatarUri ? (
-                  <View style={styles.avatarCircle}>
-                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                  </View>
-                ) : (
-                  <Image
-                    source={require('@/assets/png/Upload Photo.png')}
-                    style={styles.uploadPhotoIcon}
-                    resizeMode="contain"
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
+                {role === 'vendor' ? 'Create Merchant\nAccount' : 'Create\nAccount'}
+              </Text>
+            </Box>
 
             {/* Form Fields */}
-            <View style={styles.form}>
-              {/* Email */}
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  placeholderTextColor="#8E8E93"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
+            <Box style={styles.formContainer}>
+              {/* Full Name */}
+              <Box>
+                <Controller
+                  control={control}
+                  name="fullName"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Box
+                      backgroundColor="cardBackground"
+                      borderRadius="l"
+                      height={50}
+                      paddingHorizontal="m"
+                      justifyContent="center"
+                      borderWidth={errors.fullName ? 1 : 0}
+                      borderColor="danger"
+                    >
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Name"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        autoCapitalize="words"
+                      />
+                    </Box>
+                  )}
                 />
-              </View>
+                {errors.fullName && (
+                  <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
+                    {errors.fullName.message}
+                  </Text>
+                )}
+              </Box>
+
+              {/* Email */}
+              <Box>
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Box
+                      backgroundColor="cardBackground"
+                      borderRadius="l"
+                      height={50}
+                      paddingHorizontal="m"
+                      justifyContent="center"
+                      borderWidth={errors.email ? 1 : 0}
+                      borderColor="danger"
+                    >
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Email"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoCorrect={false}
+                      />
+                    </Box>
+                  )}
+                />
+                {errors.email && (
+                  <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
+                    {errors.email.message}
+                  </Text>
+                )}
+              </Box>
 
               {/* Password */}
-              <View style={styles.passwordWrapper}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Password"
-                  placeholderTextColor="#8E8E93"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
+              <Box>
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Box
+                      backgroundColor="cardBackground"
+                      borderRadius="l"
+                      height={50}
+                      paddingHorizontal="m"
+                      flexDirection="row"
+                      alignItems="center"
+                      borderWidth={errors.password ? 1 : 0}
+                      borderColor="danger"
+                    >
+                      <TextInput
+                        style={[
+                          styles.passwordInput,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Password (8 characters)"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        secureTextEntry={!showPassword}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        autoCapitalize="none"
+                        maxLength={8}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeButton}
+                        activeOpacity={0.7}
+                      >
+                        <EyeIcon
+                          visible={showPassword}
+                          color={theme.colors.textTertiary}
+                        />
+                      </TouchableOpacity>
+                    </Box>
+                  )}
                 />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                  activeOpacity={0.7}
-                >
-                  <EyeIcon visible={showPassword} />
-                </TouchableOpacity>
-              </View>
+                {errors.password && (
+                  <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
+                    {errors.password.message}
+                  </Text>
+                )}
+              </Box>
 
-              {/* Phone Number */}
-              <View style={styles.phoneWrapper}>
-                <View style={styles.flagSection}>
-                  <Text style={styles.flagEmoji}>🇬🇧</Text>
-                  <Svg width={10} height={6} viewBox="0 0 10 6" fill="none" style={styles.chevron}>
-                    <Path d="M1 1L5 5L9 1" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </Svg>
-                </View>
-                <View style={styles.phoneDivider} />
-                <TextInput
-                  style={styles.phoneInput}
-                  placeholder="Your number"
-                  placeholderTextColor="#8E8E93"
-                  keyboardType="phone-pad"
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
+              {/* Phone Number (Optional) */}
+              <Box>
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Box
+                      backgroundColor="cardBackground"
+                      borderRadius="l"
+                      height={50}
+                      paddingHorizontal="m"
+                      flexDirection="row"
+                      alignItems="center"
+                    >
+                      <Box flexDirection="row" alignItems="center">
+                        <Text fontSize={20} marginRight="xs">
+                          🇮🇳
+                        </Text>
+                        <Svg
+                          width={10}
+                          height={6}
+                          viewBox="0 0 10 6"
+                          fill="none"
+                          style={styles.chevron}
+                        >
+                          <Path
+                            d="M1 1L5 5L9 1"
+                            stroke={theme.colors.textTertiary}
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      </Box>
+                      <Box
+                        width={1}
+                        height={24}
+                        backgroundColor="border"
+                        marginRight="m"
+                      />
+                      <TextInput
+                        style={[
+                          styles.phoneInput,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Your number"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        keyboardType="phone-pad"
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                      />
+                    </Box>
+                  )}
                 />
-              </View>
-            </View>
+              </Box>
+
+              {/* General auth error display */}
+              {authError && (
+                <Box
+                  backgroundColor="dangerLight"
+                  padding="s"
+                  borderRadius="m"
+                  marginTop="xs"
+                >
+                  <Text variant="caption" color="danger" textAlign="center">
+                    {authError}
+                  </Text>
+                </Box>
+              )}
+            </Box>
 
             {/* Bottom Actions */}
-            <View style={styles.bottomSection}>
+            <Box style={styles.bottomSection}>
+              <Box width="100%" marginBottom="s">
+                <Button
+                  label="Done"
+                  onPress={handleSubmit(onSubmit)}
+                  loading={isLoading}
+                  backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
+                  style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                  height={56}
+                />
+              </Box>
+
               <TouchableOpacity
-                style={styles.doneButton}
-                activeOpacity={0.85}
-                onPress={handleDone}
+                style={styles.alreadyAccountRow}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Login', { role })}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text variant="body" color="textSecondary">
+                  I already have an account ·{' '}
+                  <Text
+                    variant="body"
+                    color={role === 'vendor' ? 'vendor' : 'primary'}
+                    style={{ color: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                    fontFamily={fonts.nunito.bold}
+                  >
+                    Log In
+                  </Text>
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -200,30 +431,24 @@ const CreateAccountScreen = () => {
                 activeOpacity={0.7}
                 onPress={handleCancel}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text variant="bodyLarge" color="textTertiary">
+                  Cancel
+                </Text>
               </TouchableOpacity>
-            </View>
+            </Box>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
-  );
-};
 
-export default CreateAccountScreen;
+      <MaxAttemptsModal
+        visible={isMaxAttemptsModalVisible}
+        onDismiss={dismissMaxAttemptsModal}
+      />
+    </Box>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  backgroundWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
   safeArea: {
     flex: 1,
   },
@@ -237,141 +462,41 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     justifyContent: 'space-between',
   },
-  header: {
-    marginLeft: 14,
-    marginTop: 115,
-    marginBottom: 18,
-  },
-  title: {
-    fontFamily: fonts.raleway.bold,
-    fontSize: 44,
-    lineHeight: 48,
-    color: '#181C1F',
-    letterSpacing: -0.5,
-  },
-  avatarSection: {
-    alignItems: 'flex-start',
-    marginBottom: 36,
-  },
-  avatarPickerButton: {
-    width: 90,
-    height: 90,
-    marginLeft: 26,
-    marginTop: 55,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  uploadPhotoIcon: {
-    width: 90,
-    height: 90,
-  },
-  avatarCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  form: {
+  formContainer: {
     gap: 12,
     marginBottom: 24,
   },
-  inputWrapper: {
-    backgroundColor: '#F7F7F8',
-    borderRadius: 16,
-    height: 50,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
   input: {
-    fontFamily: fonts.nunito.regular,
     fontSize: 16,
-    color: '#181C1F',
     height: '100%',
-  },
-  passwordWrapper: {
-    backgroundColor: '#F7F7F8',
-    borderRadius: 16,
-    height: 50,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   passwordInput: {
     flex: 1,
-    fontFamily: fonts.nunito.regular,
     fontSize: 16,
-    color: '#181C1F',
     height: '100%',
   },
   eyeButton: {
     padding: 6,
   },
-  phoneWrapper: {
-    backgroundColor: '#F7F7F8',
-    borderRadius: 16,
-    height: 50,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  flagSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  flagEmoji: {
-    fontSize: 20,
-    marginRight: 6,
-  },
   chevron: {
     marginRight: 10,
   },
-  phoneDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#D1D5DB',
-    marginRight: 12,
-  },
   phoneInput: {
     flex: 1,
-    fontFamily: fonts.nunito.regular,
     fontSize: 16,
-    color: '#181C1F',
     height: '100%',
+  },
+  cancelButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+  },
+  alreadyAccountRow: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomSection: {
     marginTop: 'auto',
     alignItems: 'center',
-  },
-  doneButton: {
-    backgroundColor: '#004BFE',
-    height: 56,
-    borderRadius: 16,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#004BFE',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  doneButtonText: {
-    fontFamily: fonts.nunito.bold,
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  cancelButtonText: {
-    fontFamily: fonts.nunito.regular,
-    fontSize: 16,
-    color: '#181C1F',
   },
 });

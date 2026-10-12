@@ -1,0 +1,18 @@
+appId: com.localkart
+---
+- launchApp
+- scroll
+- scroll
+# Tap on a product card
+- tapOn:
+    point: 30%, 45%
+- assertVisible:
+    text: ".*"
+# Scroll product details
+- scroll
+- scroll
+# Back to home
+- back
+# Open Chat screen
+- tapOn:
+    point: 90%, 6%

@@ -1,31 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
-  Text,
-  View,
+  TextInput,
   TouchableOpacity,
   Image,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, Theme } from '@/theme';
+import Button from '@/components/Button';
+import MaxAttemptsModal from '@/features/auth/components/MaxAttemptsModal';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { getCachedAvatar } from '@/utils/userAvatarStorage';
 import { RootStackParamList } from '@/navigation/types';
-import { fonts } from '@/theme/fonts';
 import RightTopBubble from '@/assets/svg/right_top_bubble.svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type ScreenRouteProp = RouteProp<RootStackParamList, 'ForgotPassword'>;
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Checkmark icon for selected option
-const CheckCircleIcon = () => (
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+const CheckCircleIcon = ({
+  fill,
+  checkColor,
+}: {
+  fill: string;
+  checkColor: string;
+}) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="12" fill="#004BFE" />
+    <Circle cx="12" cy="12" r="12" fill={fill} />
     <Path
       d="M7 12.5L10.5 16L17 8.5"
-      stroke="#FFFFFF"
+      stroke={checkColor}
       strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -35,13 +57,49 @@ const CheckCircleIcon = () => (
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [selectedMethod, setSelectedMethod] = useState<'sms' | 'email'>('sms');
+  const route = useRoute<ScreenRouteProp>();
+  const theme = useTheme<Theme>();
+  const initialEmail = (route.params as any)?.email || '';
 
-  const handleNext = () => {
-    // Navigate to OTP verification screen
-    navigation.navigate('Otp', {
-      phoneOrEmail: selectedMethod === 'sms' ? '+44 7911 123456' : 'romina@example.com',
+  const {
+    resetPassword,
+    isLoading,
+    error: authError,
+    clearError,
+    isMaxAttemptsModalVisible,
+    dismissMaxAttemptsModal,
+  } = useAuth();
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    clearError();
+    getCachedAvatar().then((cached) => {
+      setAvatarUrl(cached || null);
     });
+  }, [clearError]);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: initialEmail,
+    },
+  });
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    clearError();
+    try {
+      await resetPassword(data.email);
+      navigation.navigate('Otp', {
+        phoneOrEmail: data.email.trim(),
+      });
+    } catch {
+      // Error handled by useAuth
+    }
   };
 
   const handleCancel = () => {
@@ -49,273 +107,210 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background: right_top_bubble.svg */}
-      <View style={styles.backgroundWrapper} pointerEvents="none">
+    <Box flex={1} backgroundColor="mainBackground">
+      {/* Background Bubble */}
+      <Box position="absolute" top={0} left={0} right={0} pointerEvents="none">
         <RightTopBubble
           width={width}
           height={width * (262 / 355)}
           preserveAspectRatio="xMidYMin slice"
         />
-      </View>
+      </Box>
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.content}>
-          {/* Top Center: Romina Avatar & Titles */}
-          <View style={styles.centerSection}>
-            {/* Romina Circular Avatar */}
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={require('@/assets/png/Group 1000004658 (1).png')}
-                style={styles.avatar}
-                resizeMode="contain"
-              />
-            </View>
-
-            {/* Heading & Subtitle */}
-            <Text style={styles.title}>Password Recovery</Text>
-            <Text style={styles.subtitle}>
-              How you would like to restore{'\n'}your password?
-            </Text>
-
-            {/* Recovery Methods Pills */}
-            <View style={styles.optionsContainer}>
-              {/* SMS Option */}
-              <TouchableOpacity
-                style={[
-                  styles.optionPill,
-                  styles.smsPill,
-                  selectedMethod === 'sms' && styles.optionPillSelected,
-                ]}
-                activeOpacity={0.8}
-                onPress={() => setSelectedMethod('sms')}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardAvoid}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Top Center: Generic Avatar & Titles */}
+            <Box alignItems="center" width="100%" marginTop="l">
+              {/* Circular Avatar */}
+              <Box
+                width={96}
+                height={96}
+                borderRadius="xl"
+                borderWidth={4}
+                borderColor="mainBackground"
+                backgroundColor="cardBackground"
+                justifyContent="center"
+                alignItems="center"
+                overflow="hidden"
+                marginBottom="l"
+                shadowColor="black"
+                shadowOffset={{ width: 0, height: 4 }}
+                shadowOpacity={0.1}
+                shadowRadius={10}
+                elevation={6}
               >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedMethod === 'sms' ? styles.optionTextSms : styles.optionTextInactive,
-                  ]}
-                >
-                  SMS
-                </Text>
-                <View style={styles.iconSlot}>
-                  {selectedMethod === 'sms' ? (
-                    <CheckCircleIcon />
-                  ) : (
-                    <View style={styles.radioEmpty} />
-                  )}
-                </View>
-              </TouchableOpacity>
+                <Image
+                  source={
+                    avatarUrl
+                      ? { uri: avatarUrl }
+                      : require('@/assets/png/userImage.png')
+                  }
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              </Box>
 
-              {/* Email Option */}
-              <TouchableOpacity
-                style={[
-                  styles.optionPill,
-                  styles.emailPill,
-                  selectedMethod === 'email' && styles.optionPillSelected,
-                ]}
-                activeOpacity={0.8}
-                onPress={() => setSelectedMethod('email')}
+              {/* Heading & Subtitle */}
+              <Text variant="h2" color="textPrimary" marginBottom="s" textAlign="center">
+                Password Recovery
+              </Text>
+              <Text
+                variant="bodyLarge"
+                color="textSecondary"
+                textAlign="center"
+                marginBottom="l"
+                lineHeight={24}
               >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedMethod === 'email' ? styles.optionTextEmail : styles.optionTextInactive,
-                  ]}
+                How you would like to restore{'\n'}your password?
+              </Text>
+
+              {/* Recovery Method: Email Only (SMS option hidden per requirements) */}
+              <Box width="100%" maxWidth={320} marginBottom="m">
+                <Box
+                  height={52}
+                  borderRadius="xl"
+                  paddingHorizontal="m"
+                  flexDirection="row"
+                  alignItems="center"
+                  justifyContent="center"
+                  backgroundColor="primarySoft"
+                  borderWidth={1}
+                  borderColor="primary"
                 >
-                  Email
-                </Text>
-                <View style={styles.iconSlot}>
-                  {selectedMethod === 'email' ? (
-                    <CheckCircleIcon />
-                  ) : (
-                    <View style={styles.radioEmptyPink} />
+                  <Text variant="button" color="primary" textAlign="center">
+                    Email
+                  </Text>
+                  <Box position="absolute" right={18}>
+                    <CheckCircleIcon
+                      fill={theme.colors.primary}
+                      checkColor={theme.colors.white as string}
+                    />
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Email Input Field */}
+              <Box width="100%" maxWidth={320} marginBottom="m">
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Box
+                      backgroundColor="cardBackground"
+                      borderRadius="l"
+                      height={52}
+                      paddingHorizontal="m"
+                      justifyContent="center"
+                      borderWidth={errors.email ? 1 : 0}
+                      borderColor="danger"
+                    >
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Enter your email"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={value}
+                        onChangeText={(text) => {
+                          onChange(text);
+                          if (authError) clearError();
+                        }}
+                        onBlur={onBlur}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoCorrect={false}
+                      />
+                    </Box>
                   )}
-                </View>
+                />
+                {errors.email && (
+                  <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
+                    {errors.email.message}
+                  </Text>
+                )}
+                {authError && (
+                  <Box
+                    backgroundColor="dangerLight"
+                    padding="s"
+                    borderRadius="m"
+                    marginTop="xs"
+                  >
+                    <Text variant="caption" color="danger" textAlign="center">
+                      {authError}
+                    </Text>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* Bottom Actions: Next Button & Cancel */}
+            <Box alignItems="center" width="100%" marginBottom="s">
+              <Box width="100%" marginBottom="s">
+                <Button
+                  label="Next"
+                  onPress={handleSubmit(onSubmit)}
+                  loading={isLoading}
+                  height={56}
+                />
+              </Box>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                activeOpacity={0.7}
+                onPress={handleCancel}
+              >
+                <Text variant="bodyLarge" color="textPrimary">
+                  Cancel
+                </Text>
               </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Bottom Actions: Next Button & Cancel */}
-          <View style={styles.bottomSection}>
-            <TouchableOpacity
-              style={styles.nextButton}
-              activeOpacity={0.85}
-              onPress={handleNext}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              activeOpacity={0.7}
-              onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </Box>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+
+      <MaxAttemptsModal
+        visible={isMaxAttemptsModalVisible}
+        onDismiss={dismissMaxAttemptsModal}
+      />
+    </Box>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  backgroundWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-  },
   safeArea: {
     flex: 1,
   },
-  content: {
+  keyboardAvoid: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: height * 0.09,
+    paddingTop: 24,
     paddingBottom: 24,
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  centerSection: {
-    alignItems: 'center',
-    width: '100%',
-    marginTop: height * 0.03,
-  },
-  avatarWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 6,
   },
   avatar: {
     width: '100%',
     height: '100%',
   },
-  title: {
-    fontFamily: fonts.raleway.bold,
-    fontSize: 26,
-    lineHeight: 32,
-    color: '#181C1F',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: fonts.nunito.regular,
+  input: {
     fontSize: 16,
-    lineHeight: 24,
-    color: '#666666',
+    height: '100%',
     textAlign: 'center',
-    marginBottom: 36,
-  },
-  optionsContainer: {
-    width: '100%',
-    maxWidth: 320,
-    gap: 16,
-  },
-  optionPill: {
-    height: 52,
-    borderRadius: 26,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  smsPill: {
-    backgroundColor: '#E8EEFB',
-  },
-  emailPill: {
-    backgroundColor: '#FDEEEF',
-  },
-  optionPillSelected: {
-    // Subtle shadow on active
-    shadowColor: '#004BFE',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  optionText: {
-    fontFamily: fonts.nunito.bold,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  optionTextSms: {
-    color: '#004BFE',
-  },
-  optionTextEmail: {
-    color: '#181C1F',
-  },
-  optionTextInactive: {
-    color: '#8E8E93',
-  },
-  iconSlot: {
-    position: 'absolute',
-    right: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioEmpty: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#C5D3F0',
-  },
-  radioEmptyPink: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E8D4D6',
-  },
-  bottomSection: {
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 16,
-  },
-  nextButton: {
-    backgroundColor: '#004BFE',
-    height: 56,
-    borderRadius: 16,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-    shadowColor: '#004BFE',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  nextButtonText: {
-    fontFamily: fonts.nunito.bold,
-    fontSize: 18,
-    color: '#FFFFFF',
   },
   cancelButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-  },
-  cancelButtonText: {
-    fontFamily: fonts.nunito.regular,
-    fontSize: 16,
-    color: '#181C1F',
   },
 });

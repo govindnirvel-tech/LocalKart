@@ -31,6 +31,7 @@ export default function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
+        animation: 'shift',
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: theme.colors.primary,

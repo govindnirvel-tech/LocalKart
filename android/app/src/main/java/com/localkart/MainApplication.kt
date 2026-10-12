@@ -1,6 +1,9 @@
 package com.localkart
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -23,5 +26,22 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)
+    createNotificationChannel()
+  }
+
+  private fun createNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channelId = "default_channel_id"
+      val name = "Default Notifications"
+      val descriptionText = "LocalKart Notifications"
+      val importance = NotificationManager.IMPORTANCE_HIGH
+      val channel = NotificationChannel(channelId, name, importance).apply {
+        description = descriptionText
+        enableVibration(true)
+        enableLights(true)
+      }
+      val notificationManager = getSystemService(NotificationManager::class.java)
+      notificationManager?.createNotificationChannel(channel)
+    }
   }
 }

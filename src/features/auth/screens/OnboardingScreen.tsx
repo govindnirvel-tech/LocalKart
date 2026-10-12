@@ -1,16 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Dimensions,
-  Image,
   TouchableOpacity,
   FlatList,
   NativeSyntheticEvent,
   NativeScrollEvent,
   StatusBar,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -82,65 +82,78 @@ const OnboardingScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const flatListRef = useRef<FlatList<OnboardingSlide>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const slideKeyExtractor = useCallback((item: OnboardingSlide) => item.id, []);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    if (index >= 0 && index < ONBOARDING_SLIDES.length && index !== currentIndex) {
-      setCurrentIndex(index);
+    if (index >= 0 && index < ONBOARDING_SLIDES.length) {
+      setCurrentIndex((prev) => (prev !== index ? index : prev));
     }
-  };
+  }, []);
 
-  const handleDotPress = (dotIdx: number) => {
+  const handleDotPress = useCallback((dotIdx: number) => {
     flatListRef.current?.scrollToIndex({
       index: dotIdx,
       animated: true,
     });
     setCurrentIndex(dotIdx);
-  };
+  }, []);
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     navigation.reset({
       index: 0,
       routes: [{ name: 'Tabs', params: { screen: 'Home' } }],
     });
-  };
+  }, [navigation]);
+
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    []
+  );
 
   const activeDot = currentIndex;
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => {
-    return (
-      <View style={styles.slideContainer}>
-        {/* Card with drop shadow and rounded corners */}
-        <View style={styles.cardShadow}>
-          <View style={styles.cardInner}>
-            {/* Top Half: Rounded Top Image */}
-            <Image
-              source={item.image}
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
+  const renderSlide = useCallback(
+    ({ item }: { item: OnboardingSlide }) => {
+      return (
+        <View style={styles.slideContainer}>
+          {/* Card with drop shadow and rounded corners */}
+          <View style={styles.cardShadow}>
+            <View style={styles.cardInner}>
+              {/* Top Half: Rounded Top Image */}
+              <FastImage
+                source={item.image}
+                style={styles.cardImage}
+                resizeMode={FastImage.resizeMode.cover}
+              />
 
-            {/* Bottom Half: Title, Description & Action Button */}
-            <View style={styles.cardBody}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.description}>{item.description}</Text>
+              {/* Bottom Half: Title, Description & Action Button */}
+              <View style={styles.cardBody}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.description}>{item.description}</Text>
 
-              {item.showButton && (
-                <TouchableOpacity
-                  style={styles.startButton}
-                  activeOpacity={0.85}
-                  onPress={handleStart}
-                >
-                  <Text style={styles.startButtonText}>Let's Start</Text>
-                </TouchableOpacity>
-              )}
+                {item.showButton && (
+                  <TouchableOpacity
+                    style={styles.startButton}
+                    activeOpacity={0.85}
+                    onPress={handleStart}
+                  >
+                    <Text style={styles.startButtonText}>Let's Start</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [handleStart]
+  );
 
   return (
     <View style={styles.root}>
@@ -162,18 +175,14 @@ const OnboardingScreen = () => {
             ref={flatListRef}
             data={ONBOARDING_SLIDES}
             renderItem={renderSlide}
-            keyExtractor={(item) => item.id}
+            keyExtractor={slideKeyExtractor}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             bounces={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            getItemLayout={(_, index) => ({
-              length: SCREEN_WIDTH,
-              offset: SCREEN_WIDTH * index,
-              index,
-            })}
+            getItemLayout={getItemLayout}
           />
         </View>
 

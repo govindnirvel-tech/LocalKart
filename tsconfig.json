@@ -2,7 +2,8 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "react-native-fast-image": ["./node_modules/@d11/react-native-fast-image"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],

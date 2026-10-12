@@ -7,6 +7,7 @@ export const textVariants = {
     color: 'textPrimary',
     fontSize: 15,
     lineHeight: 20,
+    includeFontPadding: false,
   },
 
   // ---------- Display / Headings (Raleway, Manrope) ----------
@@ -136,7 +137,7 @@ export const textVariants = {
   button: {
     fontFamily: fonts.raleway.bold,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 22,
     color: 'white',
   },
   buttonSmall: {

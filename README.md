@@ -1,97 +1,207 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🛒 LocalKart — Hyperlocal E-Commerce & Marketplace App
 
-# Getting Started
+<p align="center">
+  <b>A modern, high-performance hyperlocal e-commerce mobile application connecting local shoppers with neighborhood stores and vendors.</b>
+</p>
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+<p align="center">
+  <img src="https://img.shields.io/badge/React_Native-0.87.1-61DAFB?logo=react&logoColor=black" alt="React Native" />
+  <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Supabase-Backend_%26_Realtime-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Redux_Toolkit-State-764ABC?logo=redux&logoColor=white" alt="Redux Toolkit" />
+  <img src="https://img.shields.io/badge/Firebase-FCM_Notifications-FFCA28?logo=firebase&logoColor=black" alt="Firebase FCM" />
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-brightgreen" alt="Platform" />
+</p>
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🌟 Overview
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+**LocalKart** bridges the gap between local retail shops and consumers by providing a seamless, fast, and feature-packed shopping experience. Built with **React Native** and powered by **Supabase**, it supports dual roles (**Customer** & **Vendor**) with real-time order tracking, in-app chat, calling, flash sales, and complete vendor store management.
 
-```sh
-# Using npm
+---
+
+## ✨ Key Features
+
+### 🛍️ Customer Experience
+- **Interactive Home Screen**: Dynamic hero banners, stories, flash sale countdown timer, top circular product highlights, and categorized feeds.
+- **Advanced Search & Filters**: Filter by price, category, rating, and discounts.
+- **Product Details & Cart**: Rich product imagery via FastImage, variant selection, and cart state management.
+- **Authentication Flow**: Smooth onboarding, OTP verification, secure password reset, and dynamic bubble animations.
+- **In-App Messaging & Calling**:
+  - **Realtime Chat**: Instant communication with store owners, typing indicators, pinned product cards, and media attachments.
+  - **Audio/Video Calling**: In-app calling engine for instant vendor-customer coordination.
+- **Push Notifications**: Firebase Cloud Messaging (FCM) for real-time order and deal updates.
+
+### 🏪 Vendor / Store Portal
+- **Step-by-Step Onboarding**:
+  - Business Information & Hyperlocal Address verification
+  - Penny Drop & Bank payout verification
+  - GST / Tax & Legal document upload
+  - Under-review & Approval tracking
+- **Store & Inventory Management**:
+  - Real-time catalog & product listing management
+  - Order fulfillment workflow (Pending, Processing, Delivered)
+  - Custom business hours, temporary closure, and special holiday scheduling
+- **Vendor Wallet**: Track daily earnings, payouts, and order analytics.
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|---|---|
+| **Framework** | [React Native 0.87](https://reactnative.dev) (CLI) |
+| **Language** | [TypeScript](https://www.typescriptlang.org) |
+| **State Management** | [Redux Toolkit](https://redux-toolkit.js.org) + React-Redux |
+| **Backend & Database** | [Supabase](https://supabase.com) (PostgreSQL, Auth, Storage, Realtime) |
+| **Styling & Design System** | [@shopify/restyle](https://github.com/Shopify/restyle), Linear Gradient, Custom Typography (Raleway) |
+| **Animations** | [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) |
+| **Navigation** | [React Navigation 7](https://reactnavigation.org) (Native Stack, Bottom Tabs) |
+| **Forms & Validation** | React Hook Form + Zod |
+| **Push Notifications** | [@react-native-firebase/messaging](https://rnfirebase.io/messaging/usage) |
+| **Icons & Media** | Lucide Icons, Fast Image, SVG Transformer |
+
+---
+
+## 📁 Project Structure
+
+```text
+LocalKart/
+├── android/                        # Android native configuration, Gradle & Fastlane
+├── ios/                            # iOS native code, Podfile & configuration
+├── scripts/                        # Utility & post-install scripts (patch-raleway)
+├── src/
+│   ├── assets/                     # App static assets
+│   │   ├── fonts/                  # Raleway font family (Regular, Medium, SemiBold, Bold, ExtraBold)
+│   │   ├── icons/                  # Vector icons & symbols
+│   │   ├── png/                    # Image assets & backgrounds
+│   │   └── svg/                    # SVG assets & vector graphics
+│   ├── components/                 # Reusable atomic UI components
+│   │   ├── AppImage.tsx            # FastImage wrapper with caching & fallbacks
+│   │   ├── Button.tsx              # Themed customizable buttons
+│   │   ├── FloatingModal.tsx       # Bottom sheets and floating modals
+│   │   ├── ProfilePhotoPickerModal.tsx
+│   │   ├── ShimmerPlaceholder.tsx  # Loading skeleton animations
+│   │   └── ToastNotification.tsx   # Custom animated toasts
+│   ├── config/                     # App configuration & environment loader (env.ts)
+│   ├── constants/                  # App constants & global static configurations
+│   ├── dev/                        # Developer tools & profiling helpers (profilerLog.ts)
+│   ├── features/                   # Core business features (Domain-driven structure)
+│   │   ├── auth/                   # Authentication (Login, OTP, Signup, Password Reset, DynamicBubbles)
+│   │   ├── call/                   # Calling Engine (WebRTC Signaling, ActiveCall, IncomingCallModal)
+│   │   ├── cart/                   # Cart management & summary
+│   │   ├── chat/                   # Real-time messaging (ChatRoom, Messages, Audio/Media, PinnedProducts)
+│   │   ├── home/                   # Home experience (Hero Carousel, Flash Sales, Categories, Story Cards)
+│   │   ├── orders/                 # Customer order management & tracking
+│   │   ├── product/                # Product details, category listings, and filter modals
+│   │   ├── profile/                # User profile, addresses & account settings
+│   │   └── wishlist/               # Saved & favorited items
+│   ├── firebase-config/            # Firebase Cloud Messaging & background handlers (FCM)
+│   ├── hooks/                      # Custom shared React hooks
+│   ├── lib/                        # Third-party client setups (supabase.ts client initialization)
+│   ├── navigation/                 # Navigation setup (RootNavigator, TabNavigator, Route types)
+│   ├── role/                       # Role selection flow (Customer vs. Vendor onboarding choice)
+│   ├── services/                   # Business services & data layers (homeService.ts)
+│   ├── store/                      # Redux Toolkit store, hooks & feature slices (authSlice, cartSlice)
+│   ├── theme/                      # Shopify Restyle theme system (palette, colors, typography, tokens)
+│   ├── types/                      # TypeScript definitions (database.ts, user.ts, declarations.d.ts)
+│   ├── utils/                      # Helper utilities (discount calculation, imageResolver, avatar storage)
+│   └── vendor/                     # Dedicated Vendor Portal
+│       ├── components/             # Vendor onboarding steps, KYC, penny drop & business hours modals
+│       ├── hooks/                  # Vendor specific lifecycle hooks (useStoreStatus)
+│       ├── navigation/             # VendorNavigator
+│       ├── screens/                # Dashboard, Inventory, Products, Orders, Store Settings, Wallet
+│       ├── store/                  # Vendor slices (vendorOnboardingSlice, vendorStoreSlice)
+│       ├── types/                  # Vendor data contracts & store profile interfaces
+│       └── utils/                  # Store operational state & time helper logic
+├── supabase/                       # Supabase database migrations, schema & seed data
+│   ├── schema.sql                  # Database tables, triggers, and RLS security policies
+│   ├── seed_data.sql               # Default seed products and store records
+│   └── fashion_seed.sql            # Fashion category sample data
+├── babel.config.js                 # Babel plugins & module resolvers
+├── package.json                    # Project dependencies and npm scripts
+└── tsconfig.json                   # TypeScript configuration
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js**: `>= 22.11.0`
+- **JDK**: Version 17
+- **Android Studio** (Android SDK & Emulator / Physical Device)
+- **Git**
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/govindnirvel-tech/LocalKart.git
+   cd LocalKart
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Configure Environment Variables:**
+   Create a `.env` file in the root directory by copying `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
+   Add your **Supabase URL**, **Supabase Anon Key**, and **Firebase** credentials.
+
+4. **Database Setup:**
+   Run the scripts inside `/supabase` in your Supabase SQL editor:
+   - `schema.sql` (Tables, RLS policies, triggers)
+   - `seed_data.sql` / `fashion_seed.sql` (Sample products and categories)
+
+---
+
+## 📱 Running the Application
+
+### Start Metro Bundler:
+```bash
 npm start
-
-# OR using Yarn
+# or
 yarn start
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+### Run on Android:
+```bash
 npm run android
-
-# OR using Yarn
+# or
 yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
+### Run on iOS (macOS required):
+```bash
 bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+cd ios && bundle exec pod install && cd ..
 npm run ios
-
-# OR using Yarn
+# or
 yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🤝 Contributing
 
-## Step 3: Modify your app
+Contributions are welcome! Please follow these steps:
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## 📄 License
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+This project is licensed under the [MIT License](LICENSE).

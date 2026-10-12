@@ -1,8 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
-  View,
   TextInput,
   TouchableOpacity,
   Image,
@@ -13,57 +11,181 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, Theme } from '@/theme';
+import Button from '@/components/Button';
+import MaxAttemptsModal from '@/features/auth/components/MaxAttemptsModal';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { RootStackParamList } from '@/navigation/types';
-import { fonts } from '@/theme/fonts';
-import TopBubblesBackground from '@/assets/svg/Bubbles copy.svg';
-import ArrowButtonIcon from '@/assets/svg/Button.svg';
+import { supabase } from '@/lib/supabase';
+import { getCachedAvatar, getCachedName } from '@/utils/userAvatarStorage';
+import { DynamicTopBubbles } from '@/features/auth/components/DynamicBubbles';
+
+import Svg, { Path, Circle } from 'react-native-svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'Password'>;
 
 const { width, height } = Dimensions.get('window');
 
-const TOTAL_DOTS = 8;
-const CORRECT_PASSWORD = 'password'; // Demo correct password, any other triggers wrong state
+const EyeIcon = ({
+  visible = false,
+  color,
+  size = 22,
+}: {
+  visible?: boolean;
+  color: string;
+  size?: number;
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {visible ? (
+      <>
+        <Path
+          d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8-11-8-11-8z"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
+      </>
+    ) : (
+      <>
+        <Path
+          d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M1 1l22 22"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </>
+    )}
+  </Svg>
+);
 
-const PasswordScreen = () => {
+export default function PasswordScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
-  const userName = route.params?.name || 'Romina';
+  const theme = useTheme<Theme>();
+  const email = route.params?.email || '';
+  const role = route.params?.role || 'customer';
+
+  const {
+    signIn,
+    isLoading,
+    error: authError,
+    clearError,
+    isMaxAttemptsModalVisible,
+    dismissMaxAttemptsModal,
+  } = useAuth();
 
   const [password, setPassword] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isWrongPassword, setIsWrongPassword] = useState(false);
+  const [inlineError, setInlineError] = useState('');
   const inputRef = useRef<any>(null);
 
-  const handlePasswordChange = (text: string) => {
-    if (isError) {
-      setIsError(false);
-    }
+  // Actual user name (No email splitting)
+  const [displayName, setDisplayName] = useState('Govind');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-    const trimmed = text.slice(0, TOTAL_DOTS);
-    setPassword(trimmed);
+  useEffect(() => {
+    let isMounted = true;
 
-    // If 8 characters reached, validate
-    if (trimmed.length === TOTAL_DOTS) {
-      if (trimmed.toLowerCase() === CORRECT_PASSWORD || trimmed === '12345678') {
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Tabs', params: { screen: 'Home' } }],
-          });
-        }, 200);
-      } else {
-        // Trigger 06 Wrong Password state
-        setTimeout(() => {
-          setIsError(true);
-        }, 150);
+    // 1. Instantly check cached avatar & name
+    getCachedAvatar().then((cached) => {
+      if (isMounted && cached) {
+        setAvatarUrl(cached);
       }
+    });
+
+    getCachedName().then((cachedName) => {
+      if (isMounted && cachedName) {
+        const firstName = cachedName.trim().split(' ')[0];
+        if (firstName) {
+          setDisplayName(firstName.charAt(0).toUpperCase() + firstName.slice(1));
+        }
+      }
+    });
+
+    if (!email) return;
+
+    // 2. Fetch from Supabase if available
+    const fetchUserProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, image_url')
+          .eq('email', email.trim().toLowerCase())
+          .maybeSingle();
+
+        if (isMounted && data) {
+          if (data.full_name) {
+            const firstName = data.full_name.trim().split(' ')[0];
+            if (firstName) {
+              setDisplayName(firstName.charAt(0).toUpperCase() + firstName.slice(1));
+            }
+          }
+          if (data.image_url) {
+            setAvatarUrl(data.image_url);
+          } else {
+            setAvatarUrl(null);
+          }
+        }
+      } catch (e) {
+        // silent fallback
+      }
+    };
+
+    fetchUserProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [email]);
+
+  const handlePasswordChange = (text: string) => {
+    if (isWrongPassword) {
+      setIsWrongPassword(false);
+    }
+    if (inlineError) {
+      setInlineError('');
+    }
+    clearError();
+
+    const trimmed = text.slice(0, 8);
+    setPassword(trimmed);
+  };
+
+  const submitLogin = async (pwdToSubmit: string) => {
+    if (!email) {
+      setInlineError('Email is missing. Please go back to login.');
+      return;
+    }
+
+    if (pwdToSubmit.length < 8) {
+      setInlineError('Password must be at least 8 characters');
+      return;
+    }
+
+    try {
+      await signIn({
+        email,
+        password: pwdToSubmit,
+      });
+    } catch (err: any) {
+      setIsWrongPassword(true);
+      setInlineError(err?.message || 'Invalid email or password. Please try again.');
     }
   };
 
-  const handleNotYou = () => {
-    navigation.navigate('Login');
-  };
+
 
   const handleForgotPassword = () => {
     navigation.navigate('ForgotPassword');
@@ -72,263 +194,249 @@ const PasswordScreen = () => {
   const isTyping = password.length > 0;
 
   return (
-    <View style={styles.container}>
-      {/* Background Bubbles */}
-      <View style={styles.backgroundWrapper} pointerEvents="none">
-        <TopBubblesBackground width={width} height={height * 0.48} preserveAspectRatio="xMidYMin slice" />
-      </View>
+    <Box flex={1} backgroundColor="mainBackground">
+      {/* Background Bubbles (Dynamic Role Color) */}
+      <Box position="absolute" top={0} left={0} right={0} pointerEvents="none">
+        <DynamicTopBubbles
+          role={role}
+          width={width}
+          height={height * 0.48}
+        />
+      </Box>
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardAvoid}
         >
-          <View style={styles.content}>
-            {/* Top Center Profile & Greeting Section */}
-            <View style={styles.profileSection}>
-              {/* Romina Circular Avatar */}
-              <View style={styles.avatarWrapper}>
-                <Image
-                  source={require('@/assets/png/Group 1000004658 (1).png')}
-                  style={styles.avatar}
-                  resizeMode="contain"
-                />
-              </View>
-
-              {/* Greeting & Subtitle */}
-              <Text style={styles.greetingTitle}>Hello, {userName}!!</Text>
-              <Text style={styles.subtitle}>Type your password</Text>
-
-              {/* Hidden TextInput to capture keyboard inputs */}
-              <TextInput
-                ref={inputRef}
-                style={styles.hiddenInput}
-                keyboardType="default"
-                maxLength={TOTAL_DOTS}
-                value={password}
-                onChangeText={handlePasswordChange}
-                autoFocus
-                onSubmitEditing={() => {
-                  if (password.length > 0 && password.toLowerCase() !== CORRECT_PASSWORD && password !== '12345678') {
-                    setIsError(true);
-                  }
-                }}
-              />
-
-              {/* 04 Initial State: 4 Rounded Boxes (when empty) */}
-              {!isTyping && (
-                <TouchableOpacity
-                  style={styles.emptyBoxesContainer}
-                  activeOpacity={1}
-                  onPress={() => inputRef.current?.focus()}
-                >
-                  {[0, 1, 2, 3].map((index) => (
-                    <View key={index} style={styles.emptyBox} />
-                  ))}
-                </TouchableOpacity>
-              )}
-
-              {/* 05 Typing State & 06 Wrong Password State: 8 Dots */}
-              {isTyping && (
-                <View style={styles.dotsContainer}>
-                  <TouchableOpacity
-                    style={styles.dotsRow}
-                    activeOpacity={1}
-                    onPress={() => inputRef.current?.focus()}
-                  >
-                    {Array.from({ length: TOTAL_DOTS }).map((_, index) => {
-                      const isFilled = password.length > index;
-                      return (
-                        <View
-                          key={index}
-                          style={[
-                            styles.dot,
-                            isFilled && (isError ? styles.dotRed : styles.dotBlue),
-                            !isFilled && styles.dotEmpty,
-                          ]}
-                        />
-                      );
-                    })}
-                  </TouchableOpacity>
-
-                  {/* 06 Wrong Password: "Forgot your password?" link */}
-                  {isError && (
-                    <TouchableOpacity
-                      style={styles.forgotPasswordButton}
-                      activeOpacity={0.7}
-                      onPress={handleForgotPassword}
-                    >
-                      <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-            </View>
-
-            {/* Bottom Link: "Not you?" + Blue Arrow Button */}
-            <View style={styles.bottomSection}>
-              <TouchableOpacity
-                style={styles.notYouRow}
-                activeOpacity={0.7}
-                onPress={handleNotYou}
+          <Box
+            flex={1}
+            paddingHorizontal="l"
+            paddingTop="xl"
+            paddingBottom="m"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            {/* Top Center Profile & Generic Greeting Section */}
+            <Box alignItems="center" width="100%" style={{ marginTop: 120 }}>
+              {/* Circular Avatar */}
+              <Box
+                width={96}
+                height={96}
+                borderRadius="xl"
+                borderWidth={4}
+                borderColor="mainBackground"
+                backgroundColor="cardBackground"
+                justifyContent="center"
+                alignItems="center"
+                overflow="hidden"
+                marginBottom="m"
+                shadowColor="black"
+                shadowOffset={{ width: 0, height: 4 }}
+                shadowOpacity={0.1}
+                shadowRadius={10}
+                elevation={6}
               >
-                <Text style={styles.notYouText}>Not you?</Text>
-                <View style={styles.arrowIconWrapper}>
-                  <ArrowButtonIcon width={32} height={32} />
-                </View>
+                {avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={require('@/assets/png/userImage.png')}
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+                )}
+              </Box>
+
+              {/* User Greeting (Figma: Hello, Romina!!) */}
+              <Text variant="h1" color="textPrimary" marginBottom="xs" textAlign="center">
+                Hello, {displayName}!!
+              </Text>
+              <Text variant="bodyLarge" color="textSecondary" marginBottom="xs" textAlign="center">
+                Type your password
+              </Text>
+
+              {/* Active email indicator */}
+              {email ? (
+                <Text variant="captionSemiBold" color="textTertiary" marginBottom="l" textAlign="center">
+                  Logging in as: {email}
+                </Text>
+              ) : (
+                <Box marginBottom="m" />
+              )}
+
+              {/* Password Square Box with Subtle Gray Border & Eye Icon */}
+              <Box width="100%" alignItems="center" marginTop="s">
+                <Box
+                  width="100%"
+                  flexDirection="row"
+                  alignItems="center"
+                  height={54}
+                  paddingHorizontal="m"
+                  borderRadius="s"
+                  borderWidth={1.2}
+                  borderColor={isWrongPassword || inlineError ? 'danger' : 'border'}
+                  style={[
+                    styles.passwordInputContainer,
+                    {
+                      borderColor:
+                        isWrongPassword || inlineError
+                          ? theme.colors.danger
+                          : '#D1D5DB',
+                    },
+                  ]}
+                  backgroundColor="mainBackground"
+                >
+                  <TextInput
+                    ref={inputRef}
+                    style={[
+                      styles.passwordInput,
+                      { color: theme.colors.textPrimary },
+                    ]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={theme.colors.textTertiary}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    onSubmitEditing={() => submitLogin(password)}
+                    autoCapitalize="none"
+                    maxLength={8}
+                    autoFocus
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    style={styles.eyeButton}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <EyeIcon
+                      visible={showPassword}
+                      color={theme.colors.textPrimary}
+                    />
+                  </TouchableOpacity>
+                </Box>
+              </Box>
+
+              {/* Character counter feedback */}
+              {isTyping && (
+                <Text variant="caption" color="textTertiary" marginTop="s">
+                  {password.length === 8
+                    ? '8/8 characters entered'
+                    : `Enter 8 characters (${password.length}/8)`}
+                </Text>
+              )}
+
+              {/* Inline Error Message */}
+              {(inlineError || authError) && (
+                <Box marginTop="s" paddingHorizontal="m">
+                  <Text variant="caption" color="danger" textAlign="center">
+                    {inlineError || authError}
+                  </Text>
+                </Box>
+              )}
+
+              {/* Always visible Login button */}
+              <Box width="100%" marginTop="l">
+                <Button
+                  label="Login"
+                  onPress={() => submitLogin(password)}
+                  loading={isLoading}
+                  disabled={password.length < 8}
+                  backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
+                  style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                  height={52}
+                />
+              </Box>
+
+              {/* Forgot Password — always visible */}
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                activeOpacity={0.7}
+                onPress={handleForgotPassword}
+              >
+                <Text
+                  variant="body"
+                  color={role === 'vendor' ? 'vendor' : 'primary'}
+                  style={{ color: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                  textAlign="center"
+                >
+                  Forgot your password?
+                </Text>
               </TouchableOpacity>
-            </View>
-          </View>
+
+              {/* Sign Up — always visible */}
+              <TouchableOpacity
+                style={styles.signUpButton}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('CreateAccount', { role })}
+              >
+                <Text variant="body" color="textSecondary" textAlign="center">
+                  Don't have an account?{' '}
+                  <Text
+                    variant="body"
+                    color={role === 'vendor' ? 'vendor' : 'primary'}
+                    style={[styles.signUpText, { color: role === 'vendor' ? '#FF5790' : '#004BFF' }]}
+                  >
+                    Sign Up
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+            </Box>
+          </Box>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
-  );
-};
 
-export default PasswordScreen;
+      <MaxAttemptsModal
+        visible={isMaxAttemptsModalVisible}
+        onDismiss={dismissMaxAttemptsModal}
+      />
+    </Box>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  backgroundWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
   safeArea: {
     flex: 1,
   },
   keyboardAvoid: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: height * 0.08,
-    paddingBottom: 24,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  profileSection: {
-    alignItems: 'center',
-    width: '100%',
-    marginTop: height * 0.04,
-  },
-  avatarWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    backgroundColor: '#FFD6DF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 6,
-  },
   avatar: {
     width: '100%',
     height: '100%',
   },
-  greetingTitle: {
-    fontFamily: fonts.raleway.bold,
-    fontSize: 28,
-    lineHeight: 34,
-    color: '#181C1F',
-    marginBottom: 8,
-    textAlign: 'center',
+  passwordInputContainer: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  subtitle: {
-    fontFamily: fonts.nunito.regular,
+  passwordInput: {
+    flex: 1,
+    height: '100%',
     fontSize: 16,
-    color: '#8E8E93',
-    marginBottom: 32,
-    textAlign: 'center',
+    paddingVertical: 0,
   },
-  hiddenInput: {
-    position: 'absolute',
-    opacity: 0,
-    width: 1,
-    height: 1,
-  },
-  // 04 Empty State (4 Boxes)
-  emptyBoxesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 8,
-  },
-  emptyBox: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: '#F7F8F9',
-  },
-  // 05 & 06 Dots Container (8 Dots)
-  dotsContainer: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  dotsRow: {
-    flexDirection: 'row',
+  eyeButton: {
+    padding: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    width: 220,
-    height: 17,
-  },
-  dot: {
-    width: 17,
-    height: 17,
-    borderRadius: 8.5,
-  },
-  dotBlue: {
-    backgroundColor: '#004BFE',
-  },
-  dotRed: {
-    backgroundColor: '#EB5757',
-  },
-  dotEmpty: {
-    backgroundColor: '#E5EBFC',
   },
   forgotPasswordButton: {
-    marginTop: 28,
-    paddingVertical: 6,
+    marginTop: 16,
+    paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  forgotPasswordText: {
-    fontFamily: fonts.nunito.regular,
-    fontSize: 15,
-    color: '#8E8E93',
-    textAlign: 'center',
+  signUpButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
-  bottomSection: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  notYouRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  notYouText: {
-    fontFamily: fonts.nunito.regular,
-    fontSize: 16,
-    color: '#181C1F',
-    marginRight: 10,
-  },
-  arrowIconWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
+  signUpText: {
+    fontWeight: '600',
   },
 });
