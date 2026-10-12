@@ -21,7 +21,28 @@
 
 ---
 
+## 📱 App Screenshots
+
+<div align="center">
+
+### 🚀 Onboarding, Auth & Home Experience
+
+| Welcome & Onboarding | Login Flow | Home & Hyperlocal Express | Flash Sale & Timer |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/01_welcome.jpg" width="200" alt="Welcome Screen" /> | <img src="docs/screenshots/02_login.jpg" width="200" alt="Login Screen" /> | <img src="docs/screenshots/03_home_shop.jpg" width="200" alt="Home Screen" /> | <img src="docs/screenshots/04_flash_sale.jpg" width="200" alt="Flash Sale" /> |
+
+### 🛍️ Deals, Catalog & Checkout
+
+| Discount Filter (20% Off) | Product Catalog & Cart Toast | My Cart & Checkout | Categories & Seller Switch |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/05_discount_filter.jpg" width="200" alt="Discount Filter" /> | <img src="docs/screenshots/06_product_catalog.jpg" width="200" alt="Product Catalog" /> | <img src="docs/screenshots/07_cart_checkout.jpg" width="200" alt="Cart Screen" /> | <img src="docs/screenshots/08_categories_seller.jpg" width="200" alt="Categories & Seller Mode" /> |
+
+</div>
+
+---
+
 ## ✨ Key Features
+
 
 ### 🛍️ Customer Experience
 - **Interactive Home Screen**: Dynamic hero banners, stories, flash sale countdown timer, top circular product highlights, and categorized feeds.
@@ -69,6 +90,8 @@
 ```text
 LocalKart/
 ├── android/                        # Android native configuration, Gradle & Fastlane
+├── docs/                           # Documentation & UI preview screenshots
+│   └── screenshots/                # Application screen captures
 ├── ios/                            # iOS native code, Podfile & configuration
 ├── scripts/                        # Utility & post-install scripts (patch-raleway)
 ├── src/
