@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/vibecraft_studios_logo.png" alt="VibeCraft Studios" width="280" />
   <h1>🛒 LocalKart — Hyperlocal E-Commerce & Marketplace App</h1>
-  <h3>🚀 Presented by VibeCraft Studios</h3>
+  <h3>Presented by VibeCraft Studios</h3>
   <p><b>A modern, high-performance hyperlocal e-commerce mobile application connecting local shoppers with neighborhood stores and vendors.</b></p>
 </div>
 
