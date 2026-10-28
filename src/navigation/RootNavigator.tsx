@@ -114,10 +114,6 @@ function SplashScreen() {
         >
           PRESENTED BY VIBECRAFT STUDIOS
         </Text>
-
-        <Box marginTop="l">
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </Box>
       </Animated.View>
 
       {/* Bottom Footer Credit */}
