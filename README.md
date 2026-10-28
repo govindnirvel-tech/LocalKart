@@ -1,9 +1,9 @@
-# 🛒 LocalKart — Hyperlocal E-Commerce & Marketplace App
-### 🚀 Presented by VibeCraft Studios
-
-<p align="center">
-  <b>A modern, high-performance hyperlocal e-commerce mobile application connecting local shoppers with neighborhood stores and vendors.</b>
-</p>
+<div align="center">
+  <img src="docs/vibecraft_studios_logo.png" alt="VibeCraft Studios" width="280" />
+  <h1>🛒 LocalKart — Hyperlocal E-Commerce & Marketplace App</h1>
+  <h3>🚀 Presented by VibeCraft Studios</h3>
+  <p><b>A modern, high-performance hyperlocal e-commerce mobile application connecting local shoppers with neighborhood stores and vendors.</b></p>
+</div>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React_Native-0.87.1-61DAFB?logo=react&logoColor=black" alt="React Native" />
@@ -233,6 +233,7 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 <p align="center">
+  <img src="docs/vibecraft_studios_logo.png" alt="VibeCraft Studios" width="90" /><br/>
   <b>Crafted with ❤️ by VibeCraft Studios</b><br/>
   <sub>Specializing in High-Performance Android & iOS Mobile Applications</sub>
 </p>
