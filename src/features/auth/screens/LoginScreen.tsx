@@ -70,94 +70,101 @@ export default function LoginScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <Box paddingHorizontal="l" paddingBottom="l">
-                {/* Header: Title & Subtitle */}
-                <Box marginBottom="m">
-                  <Text
-                    variant="display"
-                    fontSize={46}
-                    lineHeight={62}
-                    color="textPrimary"
-                    marginBottom="s"
-                    style={styles.loginTitle}
-                  >
-                    Login
-                  </Text>
-                  <Text variant="bodyLarge" color="textSecondary">
-                    Good to see you back! 🖤
-                  </Text>
-                </Box>
+              <Box style={styles.formWrapper}>
+                {/* Top spacer to keep content at bottom when keyboard is hidden */}
+                <Box flex={1} minHeight={60} />
 
-                {/* Email Input Field with react-hook-form + zod */}
-                <Box marginBottom="l">
-                  <Controller
-                    control={control}
-                    name="email"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <Box
-                        backgroundColor="cardBackground"
-                        borderRadius="l"
-                        height={56}
-                        paddingHorizontal="m"
-                        justifyContent="center"
-                        borderWidth={errors.email ? 1 : 0}
-                        borderColor="danger"
-                      >
-                        <TextInput
-                          style={[
-                            styles.input,
-                            { color: theme.colors.textPrimary },
-                          ]}
-                          placeholder="Email"
-                          placeholderTextColor={theme.colors.textTertiary}
-                          value={value}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          autoCapitalize="none"
-                          keyboardType="email-address"
-                          autoCorrect={false}
-                        />
-                      </Box>
-                    )}
-                  />
-                  {errors.email && (
-                    <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
-                      {errors.email.message}
+                <Box paddingHorizontal="l" paddingBottom="l">
+                  {/* Header: Title & Subtitle */}
+                  <Box marginBottom="m">
+                    <Text
+                      variant="display"
+                      fontSize={46}
+                      lineHeight={62}
+                      color="textPrimary"
+                      marginBottom="s"
+                      style={styles.loginTitle}
+                    >
+                      Login
                     </Text>
-                  )}
-                </Box>
-
-                {/* Bottom Actions: Next Button & Cancel */}
-                <Box alignItems="center" width="100%">
-                  <Box width="100%" marginBottom="s">
-                    <Button
-                      label="Next"
-                      onPress={handleSubmit(handleNext)}
-                      backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
-                      style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
-                      height={56}
-                    />
+                    <Text variant="bodyLarge" color="textSecondary">
+                      Good to see you back! 🖤
+                    </Text>
                   </Box>
 
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    activeOpacity={0.7}
-                    onPress={handleCancel}
-                  >
-                    <Text variant="bodyLarge" color="textPrimary">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Email Input Field with react-hook-form + zod */}
+                  <Box marginBottom="l">
+                    <Controller
+                      control={control}
+                      name="email"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Box
+                          backgroundColor="cardBackground"
+                          borderRadius="l"
+                          height={56}
+                          paddingHorizontal="m"
+                          justifyContent="center"
+                          borderWidth={errors.email ? 1 : 0}
+                          borderColor="danger"
+                        >
+                          <TextInput
+                            style={[
+                              styles.input,
+                              { color: theme.colors.textPrimary },
+                            ]}
+                            placeholder="Email"
+                            placeholderTextColor={theme.colors.textTertiary}
+                            value={value}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                            autoCorrect={false}
+                          />
+                        </Box>
+                      )}
+                    />
+                    {errors.email && (
+                      <Text variant="caption" color="danger" marginTop="xs" marginLeft="s">
+                        {errors.email.message}
+                      </Text>
+                    )}
+                  </Box>
+
+                  {/* Bottom Actions: Next Button & Cancel */}
+                  <Box alignItems="center" width="100%">
+                    <Box width="100%" marginBottom="s">
+                      <Button
+                        label="Next"
+                        onPress={handleSubmit(handleNext)}
+                        backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
+                        style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                        height={56}
+                      />
+                    </Box>
+
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      activeOpacity={0.7}
+                      onPress={handleCancel}
+                    >
+                      <Text variant="bodyLarge" color="textPrimary">
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                  </Box>
                 </Box>
               </Box>
             </TouchableWithoutFeedback>
@@ -177,6 +184,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  formWrapper: {
+    flex: 1,
     justifyContent: 'flex-end',
   },
   input: {

@@ -1,4 +1,5 @@
 # 🛒 LocalKart — Hyperlocal E-Commerce & Marketplace App
+### 🚀 Presented by VibeCraft Studios
 
 <p align="center">
   <b>A modern, high-performance hyperlocal e-commerce mobile application connecting local shoppers with neighborhood stores and vendors.</b>
@@ -228,3 +229,11 @@ Contributions are welcome! Please follow these steps:
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  <b>Crafted with ❤️ by VibeCraft Studios</b><br/>
+  <sub>Specializing in High-Performance Android & iOS Mobile Applications</sub>
+</p>
+

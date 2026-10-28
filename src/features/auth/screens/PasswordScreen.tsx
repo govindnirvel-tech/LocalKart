@@ -7,6 +7,9 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -206,187 +209,198 @@ export default function PasswordScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
-          <Box
-            flex={1}
-            paddingHorizontal="l"
-            paddingTop="xl"
-            paddingBottom="m"
-            justifyContent="space-between"
-            alignItems="center"
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
           >
-            {/* Top Center Profile & Generic Greeting Section */}
-            <Box alignItems="center" width="100%" style={{ marginTop: 120 }}>
-              {/* Circular Avatar */}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <Box
-                width={96}
-                height={96}
-                borderRadius="xl"
-                borderWidth={4}
-                borderColor="mainBackground"
-                backgroundColor="cardBackground"
-                justifyContent="center"
+                flex={1}
+                paddingHorizontal="l"
+                paddingTop="m"
+                paddingBottom="l"
+                justifyContent="space-between"
                 alignItems="center"
-                overflow="hidden"
-                marginBottom="m"
-                shadowColor="black"
-                shadowOffset={{ width: 0, height: 4 }}
-                shadowOpacity={0.1}
-                shadowRadius={10}
-                elevation={6}
               >
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={styles.avatar}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Image
-                    source={require('@/assets/png/userImage.png')}
-                    style={styles.avatar}
-                    resizeMode="cover"
-                  />
-                )}
-              </Box>
-
-              {/* User Greeting (Figma: Hello, Romina!!) */}
-              <Text variant="h1" color="textPrimary" marginBottom="xs" textAlign="center">
-                Hello, {displayName}!!
-              </Text>
-              <Text variant="bodyLarge" color="textSecondary" marginBottom="xs" textAlign="center">
-                Type your password
-              </Text>
-
-              {/* Active email indicator */}
-              {email ? (
-                <Text variant="captionSemiBold" color="textTertiary" marginBottom="l" textAlign="center">
-                  Logging in as: {email}
-                </Text>
-              ) : (
-                <Box marginBottom="m" />
-              )}
-
-              {/* Password Square Box with Subtle Gray Border & Eye Icon */}
-              <Box width="100%" alignItems="center" marginTop="s">
-                <Box
-                  width="100%"
-                  flexDirection="row"
-                  alignItems="center"
-                  height={54}
-                  paddingHorizontal="m"
-                  borderRadius="s"
-                  borderWidth={1.2}
-                  borderColor={isWrongPassword || inlineError ? 'danger' : 'border'}
-                  style={[
-                    styles.passwordInputContainer,
-                    {
-                      borderColor:
-                        isWrongPassword || inlineError
-                          ? theme.colors.danger
-                          : '#D1D5DB',
-                    },
-                  ]}
-                  backgroundColor="mainBackground"
-                >
-                  <TextInput
-                    ref={inputRef}
-                    style={[
-                      styles.passwordInput,
-                      { color: theme.colors.textPrimary },
-                    ]}
-                    placeholder="Enter your password"
-                    placeholderTextColor={theme.colors.textTertiary}
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={handlePasswordChange}
-                    onSubmitEditing={() => submitLogin(password)}
-                    autoCapitalize="none"
-                    maxLength={8}
-                    autoFocus
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword((prev) => !prev)}
-                    style={styles.eyeButton}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                {/* Top Center Profile & Generic Greeting Section */}
+                <Box alignItems="center" width="100%" style={styles.profileSection}>
+                  {/* Circular Avatar */}
+                  <Box
+                    width={96}
+                    height={96}
+                    borderRadius="xl"
+                    borderWidth={4}
+                    borderColor="mainBackground"
+                    backgroundColor="cardBackground"
+                    justifyContent="center"
+                    alignItems="center"
+                    overflow="hidden"
+                    marginBottom="m"
+                    shadowColor="black"
+                    shadowOffset={{ width: 0, height: 4 }}
+                    shadowOpacity={0.1}
+                    shadowRadius={10}
+                    elevation={6}
                   >
-                    <EyeIcon
-                      visible={showPassword}
-                      color={theme.colors.textPrimary}
+                    {avatarUrl ? (
+                      <Image
+                        source={{ uri: avatarUrl }}
+                        style={styles.avatar}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Image
+                        source={require('@/assets/png/userImage.png')}
+                        style={styles.avatar}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </Box>
+
+                  {/* User Greeting (Figma: Hello, Romina!!) */}
+                  <Text variant="h1" color="textPrimary" marginBottom="xs" textAlign="center">
+                    Hello, {displayName}!!
+                  </Text>
+                  <Text variant="bodyLarge" color="textSecondary" marginBottom="xs" textAlign="center">
+                    Type your password
+                  </Text>
+
+                  {/* Active email indicator */}
+                  {email ? (
+                    <Text variant="captionSemiBold" color="textTertiary" marginBottom="l" textAlign="center">
+                      Logging in as: {email}
+                    </Text>
+                  ) : (
+                    <Box marginBottom="m" />
+                  )}
+
+                  {/* Password Square Box with Subtle Gray Border & Eye Icon */}
+                  <Box width="100%" alignItems="center" marginTop="s">
+                    <Box
+                      width="100%"
+                      flexDirection="row"
+                      alignItems="center"
+                      height={54}
+                      paddingHorizontal="m"
+                      borderRadius="s"
+                      borderWidth={1.2}
+                      borderColor={isWrongPassword || inlineError ? 'danger' : 'border'}
+                      style={[
+                        styles.passwordInputContainer,
+                        {
+                          borderColor:
+                            isWrongPassword || inlineError
+                              ? theme.colors.danger
+                              : '#D1D5DB',
+                        },
+                      ]}
+                      backgroundColor="mainBackground"
+                    >
+                      <TextInput
+                        ref={inputRef}
+                        style={[
+                          styles.passwordInput,
+                          { color: theme.colors.textPrimary },
+                        ]}
+                        placeholder="Enter your password"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onChangeText={handlePasswordChange}
+                        onSubmitEditing={() => submitLogin(password)}
+                        autoCapitalize="none"
+                        maxLength={8}
+                        autoFocus
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword((prev) => !prev)}
+                        style={styles.eyeButton}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <EyeIcon
+                          visible={showPassword}
+                          color={theme.colors.textPrimary}
+                        />
+                      </TouchableOpacity>
+                    </Box>
+                  </Box>
+
+                  {/* Character counter feedback */}
+                  {isTyping && (
+                    <Text variant="caption" color="textTertiary" marginTop="s">
+                      {password.length === 8
+                        ? '8/8 characters entered'
+                        : `Enter 8 characters (${password.length}/8)`}
+                    </Text>
+                  )}
+
+                  {/* Inline Error Message */}
+                  {(inlineError || authError) && (
+                    <Box marginTop="s" paddingHorizontal="m">
+                      <Text variant="caption" color="danger" textAlign="center">
+                        {inlineError || authError}
+                      </Text>
+                    </Box>
+                  )}
+
+                  {/* Always visible Login button */}
+                  <Box width="100%" marginTop="l">
+                    <Button
+                      label="Login"
+                      onPress={() => submitLogin(password)}
+                      loading={isLoading}
+                      disabled={password.length < 8}
+                      backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
+                      style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                      height={52}
                     />
+                  </Box>
+
+                  {/* Forgot Password — always visible */}
+                  <TouchableOpacity
+                    style={styles.forgotPasswordButton}
+                    activeOpacity={0.7}
+                    onPress={handleForgotPassword}
+                  >
+                    <Text
+                      variant="body"
+                      color={role === 'vendor' ? 'vendor' : 'primary'}
+                      style={{ color: role === 'vendor' ? '#FF5790' : '#004BFF' }}
+                      textAlign="center"
+                    >
+                      Forgot your password?
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Sign Up — always visible */}
+                  <TouchableOpacity
+                    style={styles.signUpButton}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('CreateAccount', { role })}
+                  >
+                    <Text variant="body" color="textSecondary" textAlign="center">
+                      Don't have an account?{' '}
+                      <Text
+                        variant="body"
+                        color={role === 'vendor' ? 'vendor' : 'primary'}
+                        style={[styles.signUpText, { color: role === 'vendor' ? '#FF5790' : '#004BFF' }]}
+                      >
+                        Sign Up
+                      </Text>
+                    </Text>
                   </TouchableOpacity>
                 </Box>
               </Box>
-
-              {/* Character counter feedback */}
-              {isTyping && (
-                <Text variant="caption" color="textTertiary" marginTop="s">
-                  {password.length === 8
-                    ? '8/8 characters entered'
-                    : `Enter 8 characters (${password.length}/8)`}
-                </Text>
-              )}
-
-              {/* Inline Error Message */}
-              {(inlineError || authError) && (
-                <Box marginTop="s" paddingHorizontal="m">
-                  <Text variant="caption" color="danger" textAlign="center">
-                    {inlineError || authError}
-                  </Text>
-                </Box>
-              )}
-
-              {/* Always visible Login button */}
-              <Box width="100%" marginTop="l">
-                <Button
-                  label="Login"
-                  onPress={() => submitLogin(password)}
-                  loading={isLoading}
-                  disabled={password.length < 8}
-                  backgroundColor={role === 'vendor' ? 'vendor' : 'primary'}
-                  style={{ backgroundColor: role === 'vendor' ? '#FF5790' : '#004BFF' }}
-                  height={52}
-                />
-              </Box>
-
-              {/* Forgot Password — always visible */}
-              <TouchableOpacity
-                style={styles.forgotPasswordButton}
-                activeOpacity={0.7}
-                onPress={handleForgotPassword}
-              >
-                <Text
-                  variant="body"
-                  color={role === 'vendor' ? 'vendor' : 'primary'}
-                  style={{ color: role === 'vendor' ? '#FF5790' : '#004BFF' }}
-                  textAlign="center"
-                >
-                  Forgot your password?
-                </Text>
-              </TouchableOpacity>
-
-              {/* Sign Up — always visible */}
-              <TouchableOpacity
-                style={styles.signUpButton}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('CreateAccount', { role })}
-              >
-                <Text variant="body" color="textSecondary" textAlign="center">
-                  Don't have an account?{' '}
-                  <Text
-                    variant="body"
-                    color={role === 'vendor' ? 'vendor' : 'primary'}
-                    style={[styles.signUpText, { color: role === 'vendor' ? '#FF5790' : '#004BFF' }]}
-                  >
-                    Sign Up
-                  </Text>
-                </Text>
-              </TouchableOpacity>
-            </Box>
-          </Box>
+            </TouchableWithoutFeedback>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -404,6 +418,13 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  profileSection: {
+    marginTop: 40,
+    marginBottom: 20,
   },
   avatar: {
     width: '100%',

@@ -1,5 +1,5 @@
-import React from 'react';
-import { ActivityIndicator, Image, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { ActivityIndicator, Image, StyleSheet, Animated } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme';
@@ -41,35 +41,95 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function SplashScreen() {
   const theme = useTheme<Theme>();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, scaleAnim]);
 
   return (
     <Box
       flex={1}
       backgroundColor="mainBackground"
-      justifyContent="center"
+      justifyContent="space-between"
       alignItems="center"
-      padding="l"
+      paddingVertical="xl"
+      paddingHorizontal="l"
     >
-      <Box
-        marginBottom="l"
-        alignItems="center"
-        justifyContent="center"
-        shadowColor="black"
-        shadowOffset={{ width: 0, height: 6 }}
-        shadowOpacity={0.1}
-        shadowRadius={14}
-        elevation={6}
+      {/* Top spacer to balance the footer */}
+      <Box height={40} />
+
+      {/* Center Animated Logo & Branding */}
+      <Animated.View
+        style={{
+          alignItems: 'center',
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        }}
       >
-        <Image
-          source={require('@/assets/png/shop_icon_with_round_circle.png')}
-          style={styles.splashLogo}
-          resizeMode="contain"
-        />
-      </Box>
-      <Text variant="hero" color="textPrimary" marginBottom="m">
-        LocalKart
-      </Text>
-      <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Box
+          marginBottom="m"
+          alignItems="center"
+          justifyContent="center"
+          shadowColor="black"
+          shadowOffset={{ width: 0, height: 6 }}
+          shadowOpacity={0.12}
+          shadowRadius={14}
+          elevation={8}
+        >
+          <Image
+            source={require('@/assets/png/shop_icon_with_round_circle.png')}
+            style={styles.splashLogo}
+            resizeMode="contain"
+          />
+        </Box>
+
+        <Text
+          variant="hero"
+          color="textPrimary"
+          fontSize={38}
+          marginBottom="xs"
+          textAlign="center"
+        >
+          LocalKart
+        </Text>
+
+        <Text
+          variant="caption"
+          color="textSecondary"
+          style={styles.presentsText}
+        >
+          PRESENTED BY VIBECRAFT STUDIOS
+        </Text>
+
+        <Box marginTop="l">
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        </Box>
+      </Animated.View>
+
+      {/* Bottom Footer Credit */}
+      <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', marginBottom: 12 }}>
+        <Text
+          variant="caption"
+          color="textTertiary"
+          style={styles.footerBrand}
+        >
+          Crafted with ❤️ by VibeCraft Studios
+        </Text>
+      </Animated.View>
     </Box>
   );
 }
@@ -86,7 +146,17 @@ export default function RootNavigator() {
   // Real-time call signaling listener for incoming calls
   useCallSignaling(authUser?.id || null);
 
-  if (!isInitialized) {
+  // Smooth 2.2s minimum splash display timer
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinSplashElapsed(true);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isInitialized || !minSplashElapsed) {
     return <SplashScreen />;
   }
 
@@ -348,5 +418,17 @@ const styles = StyleSheet.create({
   splashLogo: {
     width: 120,
     height: 120,
+  },
+  presentsText: {
+    letterSpacing: 2.2,
+    fontSize: 11,
+    fontFamily: fonts.raleway.bold,
+    textTransform: 'uppercase',
+    marginTop: 4,
+  },
+  footerBrand: {
+    letterSpacing: 0.8,
+    fontSize: 12,
+    fontFamily: fonts.raleway.medium,
   },
 });
