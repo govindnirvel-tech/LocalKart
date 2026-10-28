@@ -233,8 +233,23 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 <p align="center">
-  <img src="docs/vibecraft_studios_logo.png" alt="VibeCraft Studios" width="90" /><br/>
+  <img src="docs/vibecraft_studios_logo.png" alt="VibeCraft Studios" width="110" /><br/>
   <b>Crafted with ❤️ by VibeCraft Studios</b><br/>
   <sub>Specializing in High-Performance Android & iOS Mobile Applications</sub>
+</p>
+
+<p align="center">
+  <b>👨‍💻 Founder & Lead Architect:</b> Govind Nirvel<br/><br/>
+  <a href="https://github.com/govindnirvel-tech">
+    <img src="https://img.shields.io/badge/GitHub-govindnirvel--tech-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+  &nbsp;
+  <a href="https://linkedin.com">
+    <img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
+  </a>
+  &nbsp;
+  <a href="https://github.com/govindnirvel-tech/LocalKart">
+    <img src="https://img.shields.io/badge/Studio-VibeCraft%20Studios-00D26A?style=for-the-badge&logo=android&logoColor=white" alt="VibeCraft Studios" />
+  </a>
 </p>
 
